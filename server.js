@@ -283,11 +283,41 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Something broke!' });
 });
 
-// Start server
-const port = process.env.PORT || 10000;
-const server = app.listen(port, '0.0.0.0', () => {
-    console.log(`Server running on port ${port}`);
-});
+// Function to find available port
+const findAvailablePort = (startPort) => {
+    return new Promise((resolve, reject) => {
+        const server = require('http').createServer();
+        server.listen(startPort, '0.0.0.0', () => {
+            const { port } = server.address();
+            server.close(() => resolve(port));
+        });
+        server.on('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+                resolve(findAvailablePort(startPort + 1));
+            } else {
+                reject(err);
+            }
+        });
+    });
+};
+
+// Start server with dynamic port
+const startServer = async () => {
+    try {
+        const port = await findAvailablePort(process.env.PORT || 10000);
+        app.listen(port, '0.0.0.0', () => {
+            console.log(`Server running on port ${port}`);
+        }).on('error', (err) => {
+            console.error('Server error:', err);
+        });
+    } catch (err) {
+        console.error('Failed to start server:', err);
+        process.exit(1);
+    }
+};
+
+// Start the server
+startServer();
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
