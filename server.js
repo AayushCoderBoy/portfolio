@@ -282,3 +282,29 @@ app.use(cors({
 
 // Add preflight handling
 app.options('*', cors());
+
+// Basic health check route
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'OK' });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Something broke!' });
+});
+
+// Start server
+const port = process.env.PORT || 10000;
+const server = app.listen(port, '0.0.0.0', () => {
+    console.log(`Server running on port ${port}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    server.close(() => {
+        console.log('HTTP server closed');
+        pool.end();
+    });
+});
