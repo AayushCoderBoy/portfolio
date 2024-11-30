@@ -185,75 +185,64 @@ app.post('/api/verify-email', async (req, res) => {
     }
 });
 
-// Update the contact form submission endpoint
-app.post('/api/contact/submit', async (req, res) => {
-    const { name, email, message, verificationCode } = req.body;
-
-    // Check if all fields are present
-    if (!name || !email || !message || !verificationCode) {
-        return res.status(400).json({
-            message: 'All fields are required, including verification code'
-        });
-    }
-
-    // Verify the code
-    const storedVerification = verificationCodes.get(email);
-    if (!storedVerification) {
-        return res.status(400).json({
-            message: 'Please verify your email first'
-        });
-    }
-
-    // Check if code is expired (10 minutes)
-    if (Date.now() - storedVerification.timestamp > 600000) {
-        verificationCodes.delete(email);
-        return res.status(400).json({
-            message: 'Verification code has expired. Please request a new one'
-        });
-    }
-
-    // Check if code matches
-    if (storedVerification.code !== verificationCode) {
-        return res.status(400).json({
-            message: 'Invalid verification code'
-        });
-    }
-
+// Contact form endpoint
+app.post('/api/contact', async (req, res) => {
+    console.log('Received contact request:', req.body); // Debug log
+    
     try {
-        // Save to database
-        const dbResult = await pool.query(
-            'INSERT INTO contacts (name, email, message) VALUES ($1, $2, $3) RETURNING *',
-            [name, email, message]
-        );
+        const { name, email, message } = req.body;
+        
+        if (!name || !email || !message) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please fill in all fields'
+            });
+        }
 
-        // Send notification email
-        const mailOptions = {
-            from: `"Portfolio Contact" <${process.env.EMAIL_USER}>`,
-            to: process.env.EMAIL_USER,
-            subject: `New Contact Form Submission from ${name}`,
-            html: `
-                <div style="font-family: Arial, sans-serif; padding: 20px;">
+        // Save to database
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            
+            const result = await client.query(
+                'INSERT INTO contacts (name, email, message) VALUES ($1, $2, $3) RETURNING *',
+                [name, email, message]
+            );
+
+            // Send email notification
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: process.env.EMAIL_USER, // Send to yourself
+                subject: `New Contact Form Submission from ${name}`,
+                html: `
                     <h2>New Contact Form Submission</h2>
                     <p><strong>Name:</strong> ${name}</p>
-                    <p><strong>Email:</strong> ${email} (Verified)</p>
+                    <p><strong>Email:</strong> ${email}</p>
                     <p><strong>Message:</strong> ${message}</p>
-                </div>
-            `
-        };
+                `
+            };
 
-        await transporter.sendMail(mailOptions);
+            await transporter.sendMail(mailOptions);
+            await client.query('COMMIT');
 
-        // Clean up verification code
-        verificationCodes.delete(email);
-
-        res.status(201).json({
-            message: 'Message sent successfully!',
-            contact: dbResult.rows[0]
-        });
+            console.log('Message processed successfully'); // Debug log
+            
+            res.json({
+                success: true,
+                message: 'Message sent successfully',
+                data: result.rows[0]
+            });
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Contact form error:', error);
         res.status(500).json({
-            message: 'Error sending message',
+            success: false,
+            message: 'Error sending message. Please try again.',
             error: error.message
         });
     }
