@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path=require('path')
 const dotenv = require('dotenv');
 const { Pool } = require('pg');
 const nodemailer = require('nodemailer');
@@ -10,6 +11,8 @@ dotenv.config();
 
 // Create Express app
 const app = express();
+
+app.use(express.static(path.join(__dirname,'public')))
 
 // Middleware
 app.use(cors());
@@ -199,6 +202,10 @@ app.post('/api/contact/submit', async (req, res) => {
         });
     }
 });
+
+app.get('/',(req,res)=>{
+    res.sendFile(path.join(__dirname,'public','index.html'))
+})
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
