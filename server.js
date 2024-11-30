@@ -194,3 +194,17 @@ app.listen(PORT, () => {
         emailUser: process.env.EMAIL_USER
     });
 });
+
+// Add this function to test database
+async function testDatabaseConnection() {
+    try {
+        const client = await pool.connect();
+        const result = await client.query('SELECT NOW()');
+        console.log('Database test query result:', result.rows[0]);
+        client.release();
+    } catch (err) {
+        console.error('Database test error:', err);
+    }
+}
+
+testDatabaseConnection();
