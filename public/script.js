@@ -314,7 +314,7 @@ verifyEmailBtn.addEventListener('click', async () => {
 });
 
 // Update the backend URL to your deployed backend
-const BACKEND_URL = 'https://your-backend-url.com';
+const BACKEND_URL = 'https://portfolio-6y26.onrender.com/';
 
 // Slider functionality
 document.addEventListener('DOMContentLoaded', function() {
