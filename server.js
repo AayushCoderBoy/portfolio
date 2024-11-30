@@ -11,6 +11,8 @@ dotenv.config();
 // Create Express app
 const app = express();
 
+app.use(express.static(path.join(__dirname,'public')));
+
 // Middleware
 app.use(cors({
     origin: ['https://aayushcoderboy.github.io', 'http://localhost:3000'],
@@ -187,6 +189,10 @@ app.post('/api/contact/submit', async (req, res) => {
             error: error.message
         });
     }
+});
+
+app.get('/',(req,res)=>{
+    res.sendFile('path.join(__dirname,'public','index.html'));
 });
 
 const PORT = process.env.PORT || 5000;
