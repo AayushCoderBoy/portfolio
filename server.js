@@ -216,3 +216,27 @@ app.listen(PORT, () => {
         emailUser: process.env.EMAIL_USER
     });
 });
+
+// Add this function to test database
+async function testDatabaseConnection() {
+    try {
+        const client = await pool.connect();
+        const result = await client.query('SELECT NOW()');
+        console.log('Database test query result:', result.rows[0]);
+        client.release();
+    } catch (err) {
+        console.error('Database test error:', err);
+    }
+}
+
+testDatabaseConnection();
+
+app.use(cors({
+    origin: '*', // For testing. Change to specific origins later
+    methods: ['GET', 'POST'],
+    credentials: true,
+    allowedHeaders: ['Content-Type']
+}));
+
+// Add preflight handling
+app.options('*', cors());
