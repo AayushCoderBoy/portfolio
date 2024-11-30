@@ -1,10 +1,3 @@
-require('dotenv').config();
-
-console.log('Environment check:', {
-    DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not set',
-    EMAIL_USER: process.env.EMAIL_USER || 'Not set',
-    EMAIL_PASS: process.env.EMAIL_PASS ? 'Set' : 'Not set'
-});
 
 const express = require('express');
 const cors = require('cors');
@@ -14,9 +7,15 @@ const { Pool } = require('pg');
 const nodemailer = require('nodemailer');
 const emailVerifier = require('email-verify');
 const crypto = require('crypto');
+require('dotenv').config();
 
 dotenv.config();
 
+console.log('Environment check:', {
+    DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not set',
+    EMAIL_USER: process.env.EMAIL_USER || 'Not set',
+    EMAIL_PASS: process.env.EMAIL_PASS ? 'Set' : 'Not set'
+});
 // Create Express app
 const app = express();
 
