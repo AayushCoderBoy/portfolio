@@ -19,7 +19,6 @@ app.use(express.json());
 
 app.use(express.static(path.join(__dirname,'public')));
 
-const __filename=__filename;
 const __dirname=path.dirname(__filename);
 
 // PostgreSQL connection
