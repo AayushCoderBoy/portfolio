@@ -19,7 +19,7 @@ app.use(express.json());
 
 app.use(express.static(path.join(__dirname,'public')));
 
-const __filename=file.URLToPath(import.meta.url);
+const __filename=fileURLToPath(import.meta.url);
 const __dirname=path.dirname(__filename);
 
 // PostgreSQL connection
@@ -27,7 +27,7 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
         rejectUnauthorized: false
-    }
+    } : false
 });
 
 // Email configuration
