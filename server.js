@@ -26,13 +26,67 @@ app.use(express.static(path.join(__dirname,'public')))
 app.use(cors());
 app.use(express.json());
 
-// PostgreSQL connection
+const BACKEND_URL = 'https://portfolio-g8qc.onrender.com/';
+
+// Log the database URL (masked)
+console.log('Database URL exists:', !!process.env.DATABASE_URL);
+
+// Database configuration
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
         rejectUnauthorized: false
-    }
+    },
+    // Add these timeout settings
+    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 30000
 });
+
+// Test database connection
+async function testDatabaseConnection() {
+    let client;
+    try {
+        client = await pool.connect();
+        console.log('Successfully connected to database');
+        const result = await client.query('SELECT NOW()');
+        console.log('Database test query result:', result.rows[0]);
+    } catch (err) {
+        console.error('Database connection error:', {
+            message: err.message,
+            code: err.code,
+            stack: err.stack
+        });
+    } finally {
+        if (client) {
+            client.release();
+        }
+    }
+}
+
+// Initialize database
+async function initDatabase() {
+    try {
+        await testDatabaseConnection();
+        // Add your table creation queries here
+        const client = await pool.connect();
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS contacts (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                email VARCHAR(100) NOT NULL,
+                message TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        console.log('Database initialized successfully');
+        client.release();
+    } catch (err) {
+        console.error('Database initialization error:', err);
+    }
+}
+
+// Call initialization
+initDatabase();
 
 // Email configuration
 const transporter = nodemailer.createTransport({
