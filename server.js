@@ -28,11 +28,10 @@ app.use(express.json());
 
 // PostgreSQL connection
 const pool = new Pool({
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    database: process.env.DB_NAME
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
 // Email configuration
@@ -48,13 +47,19 @@ const transporter = nodemailer.createTransport({
 });
 
 // Test database connection
-pool.query('SELECT NOW()', (err, res) => {
-    if (err) {
-        console.error('Database connection error:', err.message);
-    } else {
-        console.log('Database connected successfully');
+async function testDatabaseConnection() {
+    try {
+        const client = await pool.connect();
+        const result = await client.query('SELECT NOW()');
+        console.log('Database test query result:', result.rows[0]);
+        client.release();
+    } catch (err) {
+        console.error('Database test error:', err);
+        console.log('Database URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
     }
-});
+}
+
+testDatabaseConnection();
 
 // Test email configuration immediately
 transporter.verify((error, success) => {
@@ -224,20 +229,6 @@ app.listen(PORT, () => {
         emailUser: process.env.EMAIL_USER
     });
 });
-
-// Add this function to test database
-async function testDatabaseConnection() {
-    try {
-        const client = await pool.connect();
-        const result = await client.query('SELECT NOW()');
-        console.log('Database test query result:', result.rows[0]);
-        client.release();
-    } catch (err) {
-        console.error('Database test error:', err);
-    }
-}
-
-testDatabaseConnection();
 
 app.use(cors({
     origin: '*', // For testing. Change to specific origins later
