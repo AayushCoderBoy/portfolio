@@ -281,78 +281,28 @@ app.get('/',(req,res)=>{
     res.sendFile(path.join(__dirname,'public','index.html'))
 })
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const PORT = parseInt(process.env.PORT || '3000');
+
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
-    console.log('Environment variables loaded:', {
-        dbUser: process.env.DB_USER,
-        dbName: process.env.DB_NAME,
-        emailUser: process.env.EMAIL_USER
-    });
-});
-
-app.use(cors({
-    origin: '*', // For testing. Change to specific origins later
-    methods: ['GET', 'POST'],
-    credentials: true,
-    allowedHeaders: ['Content-Type']
-}));
-
-// Add preflight handling
-app.options('*', cors());
-
-// Basic health check route
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'OK' });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Something broke!' });
-});
-
-// Function to find available port
-const findAvailablePort = (startPort) => {
-    return new Promise((resolve, reject) => {
-        const server = require('http').createServer();
-        server.listen(startPort, '0.0.0.0', () => {
-            const { port } = server.address();
-            server.close(() => resolve(port));
+}).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.log(`Port ${PORT} is busy, trying ${PORT + 1}`);
+        const newPort = PORT + 1;
+        app.listen(newPort, '0.0.0.0', () => {
+            console.log(`Server running on alternative port ${newPort}`);
         });
-        server.on('error', (err) => {
-            if (err.code === 'EADDRINUSE') {
-                resolve(findAvailablePort(startPort + 1));
-            } else {
-                reject(err);
-            }
-        });
-    });
-};
-
-// Start server with dynamic port
-const startServer = async () => {
-    try {
-        const port = await findAvailablePort(process.env.PORT || 10000);
-        app.listen(port, '0.0.0.0', () => {
-            console.log(`Server running on port ${port}`);
-        }).on('error', (err) => {
-            console.error('Server error:', err);
-        });
-    } catch (err) {
-        console.error('Failed to start server:', err);
+    } else {
+        console.error('Server error:', err);
         process.exit(1);
     }
-};
+});
 
-// Start the server
-startServer();
-
-// Graceful shutdown
 process.on('SIGTERM', () => {
     console.log('SIGTERM signal received: closing HTTP server');
     server.close(() => {
         console.log('HTTP server closed');
         pool.end();
+        process.exit(0);
     });
 });
