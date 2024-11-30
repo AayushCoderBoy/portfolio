@@ -371,6 +371,8 @@ document.getElementById('contact-form').addEventListener('submit', async functio
     e.preventDefault();
     
     const formStatus = document.querySelector('.form-status');
+    formStatus.textContent = 'Sending message...';
+    formStatus.style.color = 'blue';
     
     try {
         const formData = {
@@ -379,9 +381,9 @@ document.getElementById('contact-form').addEventListener('submit', async functio
             message: this.querySelector('textarea[name="message"]').value
         };
 
-        console.log('Sending form data:', formData); // Debug log
+        console.log('Sending data:', formData); // Debug log
 
-        const response = await fetch('https://your-render-backend-url.onrender.com/api/contact', {
+        const response = await fetch('https://portfolio-g8qc.onrender.com/api/contact', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -389,15 +391,17 @@ document.getElementById('contact-form').addEventListener('submit', async functio
             body: JSON.stringify(formData)
         });
 
+        console.log('Response status:', response.status); // Debug log
+
         const data = await response.json();
-        console.log('Server response:', data); // Debug log
+        console.log('Response data:', data); // Debug log
 
         if (data.success) {
             formStatus.textContent = 'Message sent successfully!';
             formStatus.style.color = 'green';
             this.reset(); // Clear form
         } else {
-            throw new Error(data.message || 'Error sending message');
+            throw new Error(data.message || 'Failed to send message');
         }
     } catch (error) {
         console.error('Form submission error:', error);
