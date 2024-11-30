@@ -365,3 +365,43 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto slide every 5 seconds
     setInterval(nextSlide, 5000);
 });
+
+// Contact form submission
+document.getElementById('contact-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formStatus = document.querySelector('.form-status');
+    
+    try {
+        const formData = {
+            name: this.querySelector('input[name="name"]').value,
+            email: this.querySelector('input[name="email"]').value,
+            message: this.querySelector('textarea[name="message"]').value
+        };
+
+        console.log('Sending form data:', formData); // Debug log
+
+        const response = await fetch('https://your-render-backend-url.onrender.com/api/contact', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+        console.log('Server response:', data); // Debug log
+
+        if (data.success) {
+            formStatus.textContent = 'Message sent successfully!';
+            formStatus.style.color = 'green';
+            this.reset(); // Clear form
+        } else {
+            throw new Error(data.message || 'Error sending message');
+        }
+    } catch (error) {
+        console.error('Form submission error:', error);
+        formStatus.textContent = 'Error sending message. Please try again.';
+        formStatus.style.color = 'red';
+    }
+});
