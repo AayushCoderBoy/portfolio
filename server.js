@@ -36,32 +36,21 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
         rejectUnauthorized: false
-    },
-    // Add these timeout settings
-    connectionTimeoutMillis: 5000,
-    idleTimeoutMillis: 30000
+    }
 });
 
 // Test database connection
-async function testDatabaseConnection() {
-    let client;
-    try {
-        client = await pool.connect();
-        console.log('Successfully connected to database');
-        const result = await client.query('SELECT NOW()');
-        console.log('Database test query result:', result.rows[0]);
-    } catch (err) {
-        console.error('Database connection error:', {
-            message: err.message,
-            code: err.code,
-            stack: err.stack
+pool.connect((err, client, release) => {
+    if (err) {
+        console.error('Database connection error:', err);
+        console.error('Database config:', {
+            url: process.env.DATABASE_URL ? 'Set (hidden)' : 'Not set'
         });
-    } finally {
-        if (client) {
-            client.release();
-        }
+    } else {
+        console.log('Database connected successfully');
+        release();
     }
-}
+});
 
 // Initialize database
 async function initDatabase() {
