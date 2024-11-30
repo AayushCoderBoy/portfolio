@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const path= require('path');
 const dotenv = require('dotenv');
 const { Pool } = require('pg');
 const nodemailer = require('nodemailer');
@@ -13,10 +12,12 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: ['https://aayushcoderboy.github.io', 'http://localhost:3000'],
+    credentials: true,
+    methods: ['GET', 'POST']
+}));
 app.use(express.json());
-
-app.use(express.static(path.join(__dirname,'public')));
 
 // PostgreSQL connection
 const pool = new Pool({
@@ -188,10 +189,6 @@ app.post('/api/contact/submit', async (req, res) => {
     }
 });
 
-app.get("/",(req,res)=>{
-    res.sendFile(path.join(__dirname,'public','index.html'));
-});
-
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
@@ -215,3 +212,25 @@ async function testDatabaseConnection() {
 }
 
 testDatabaseConnection();
+
+// Add this after pool creation
+async function initDatabase() {
+    try {
+        const client = await pool.connect();
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS contacts (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                email VARCHAR(100) NOT NULL,
+                message TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        console.log('Database initialized successfully');
+        client.release();
+    } catch (err) {
+        console.error('Error initializing database:', err);
+    }
+}
+
+initDatabase();
