@@ -187,63 +187,82 @@ app.post('/api/verify-email', async (req, res) => {
 
 // Contact form endpoint
 app.post('/api/contact', async (req, res) => {
-    console.log('Received contact request:', req.body); // Debug log
-    
     try {
         const { name, email, message } = req.body;
-        
-        if (!name || !email || !message) {
-            return res.status(400).json({
-                success: false,
-                message: 'Please fill in all fields'
-            });
-        }
+        console.log('Received contact form submission:', { name, email }); // Debug log
 
         // Save to database
         const client = await pool.connect();
-        try {
-            await client.query('BEGIN');
-            
-            const result = await client.query(
-                'INSERT INTO contacts (name, email, message) VALUES ($1, $2, $3) RETURNING *',
-                [name, email, message]
-            );
+        const result = await client.query(
+            'INSERT INTO contacts (name, email, message) VALUES ($1, $2, $3) RETURNING *',
+            [name, email, message]
+        );
+        client.release();
 
-            // Send email notification
-            const mailOptions = {
-                from: process.env.EMAIL_USER,
-                to: process.env.EMAIL_USER, // Send to yourself
-                subject: `New Contact Form Submission from ${name}`,
-                html: `
-                    <h2>New Contact Form Submission</h2>
-                    <p><strong>Name:</strong> ${name}</p>
-                    <p><strong>Email:</strong> ${email}</p>
-                    <p><strong>Message:</strong> ${message}</p>
-                `
-            };
+        // Send email notification
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: process.env.EMAIL_USER, // Send to yourself
+            subject: `New Contact Form Submission from ${name}`,
+            html: `
+                <h2>New Contact Form Submission</h2>
+                <p><strong>Name:</strong> ${name}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Message:</strong> ${message}</p>
+            `
+        };
 
-            await transporter.sendMail(mailOptions);
-            await client.query('COMMIT');
+        await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully'); // Debug log
 
-            console.log('Message processed successfully'); // Debug log
-            
-            res.json({
-                success: true,
-                message: 'Message sent successfully',
-                data: result.rows[0]
-            });
-        } catch (error) {
-            await client.query('ROLLBACK');
-            throw error;
-        } finally {
-            client.release();
-        }
+        res.json({ 
+            success: true, 
+            message: 'Message sent successfully',
+            data: result.rows[0]
+        });
+
     } catch (error) {
-        console.error('Contact form error:', error);
-        res.status(500).json({
-            success: false,
+        console.error('Contact form error:', error); // Debug log
+        res.status(500).json({ 
+            success: false, 
             message: 'Error sending message. Please try again.',
-            error: error.message
+            error: error.message 
+        });
+    }
+});
+
+// Email verification endpoint
+app.post('/api/verify-email', async (req, res) => {
+    try {
+        const { email } = req.body;
+        console.log('Sending verification to:', email); // Debug log
+
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Email Verification Code',
+            html: `
+                <h2>Email Verification</h2>
+                <p>Your verification code is: <strong>${verificationCode}</strong></p>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log('Verification email sent successfully'); // Debug log
+
+        res.json({ 
+            success: true, 
+            message: 'Verification code sent',
+            code: verificationCode 
+        });
+    } catch (error) {
+        console.error('Email verification error:', error); // Debug log
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error sending verification code',
+            error: error.message 
         });
     }
 });
