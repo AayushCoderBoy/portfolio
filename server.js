@@ -104,24 +104,24 @@ async function testDatabaseConnection() {
 testDatabaseConnection();
 
 // Test email configuration immediately
-transporter.verify((error, success) => {
-    if (error) {
-        console.error('Email configuration error:', error);
-    } else {
-        console.log('Email server is ready');
-        // Send a test email
-        transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: process.env.EMAIL_USER,
-            subject: 'Test Email',
-            text: 'This is a test email to verify the configuration'
-        }).then(() => {
-            console.log('Test email sent successfully');
-        }).catch((err) => {
-            console.error('Test email failed:', err);
-        });
-    }
-});
+// transporter.verify((error, success) => {
+//     if (error) {
+//         console.error('Email configuration error:', error);
+//     } else {
+//         console.log('Email server is ready');
+//         // Send a test email
+//         transporter.sendMail({
+//             from: process.env.EMAIL_USER,
+//             to: process.env.EMAIL_USER,
+//             subject: 'Test Email',
+//             text: 'This is a test email to verify the configuration'
+//         }).then(() => {
+//             console.log('Test email sent successfully');
+//         }).catch((err) => {
+//             console.error('Test email failed:', err);
+//         });
+//     }
+// });
 
 // Test endpoint
 app.get('/api/test', (req, res) => {
