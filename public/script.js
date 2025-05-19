@@ -318,52 +318,74 @@ const BACKEND_URL = 'https://your-backend-url.com';
 
 // Slider functionality
 document.addEventListener('DOMContentLoaded', function() {
-    const slider = document.querySelector('.slides');
-    const slides = document.querySelectorAll('.slide');
-    const prevButton = document.querySelector('.prev');
-    const nextButton = document.querySelector('.next');
-    const dotsContainer = document.querySelector('.slider-dots');
+    const sliderContainers = document.querySelectorAll('.slider-container');
     
-    let currentSlide = 0;
-    
-    // Create dots
-    slides.forEach((_, index) => {
-        const dot = document.createElement('div');
-        dot.classList.add('dot');
-        if (index === 0) dot.classList.add('active');
-        dot.addEventListener('click', () => goToSlide(index));
-        dotsContainer.appendChild(dot);
-    });
-    
-    const dots = document.querySelectorAll('.dot');
-    
-    function updateDots() {
-        dots.forEach((dot, index) => {
-            dot.classList.toggle('active', index === currentSlide);
+    sliderContainers.forEach(container => {
+        const slider = container.querySelector('.slides');
+        const slides = container.querySelectorAll('.slide');
+        const prevButton = container.querySelector('.prev');
+        const nextButton = container.querySelector('.next');
+        const dotsContainer = container.querySelector('.slider-dots');
+        
+        let currentSlide = 0;
+        let autoSlideInterval;
+        
+        // Create dots for each slider
+        slides.forEach((_, index) => {
+            const dot = document.createElement('div');
+            dot.classList.add('dot');
+            if (index === 0) dot.classList.add('active');
+            dot.addEventListener('click', () => goToSlide(index));
+            dotsContainer.appendChild(dot);
         });
-    }
-    
-    function goToSlide(n) {
-        currentSlide = n;
-        slider.style.transform = `translateX(-${currentSlide * 100}%)`;
+        
+        const dots = container.querySelectorAll('.dot');
+        
+        function updateDots() {
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+        }
+        
+        function goToSlide(n) {
+            currentSlide = n;
+            slider.style.transform = `translateX(-${currentSlide * 100}%)`;
+            updateDots();
+        }
+        
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % slides.length;
+            goToSlide(currentSlide);
+        }
+        
+        function prevSlide() {
+            currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+            goToSlide(currentSlide);
+        }
+        
+        // Event listeners for navigation buttons
+        prevButton.addEventListener('click', prevSlide);
+        nextButton.addEventListener('click', nextSlide);
+        
+        // Auto slide functionality
+        function startAutoSlide() {
+            autoSlideInterval = setInterval(nextSlide, 5000);
+        }
+        
+        function stopAutoSlide() {
+            clearInterval(autoSlideInterval);
+        }
+        
+        // Pause on hover
+        container.addEventListener('mouseenter', stopAutoSlide);
+        container.addEventListener('mouseleave', startAutoSlide);
+        
+        // Initialize auto-sliding
+        startAutoSlide();
+        
+        // Initial setup
         updateDots();
-    }
-    
-    function nextSlide() {
-        currentSlide = (currentSlide + 1) % slides.length;
-        goToSlide(currentSlide);
-    }
-    
-    function prevSlide() {
-        currentSlide = (currentSlide - 1 + slides.length) % slides.length;
-        goToSlide(currentSlide);
-    }
-    
-    prevButton.addEventListener('click', prevSlide);
-    nextButton.addEventListener('click', nextSlide);
-    
-    // Auto slide every 5 seconds
-    setInterval(nextSlide, 5000);
+    });
 });
 
 // Contact form submission
